@@ -91,7 +91,7 @@ FILE* carregue(char quadro[9][9]) {
 			break;
 
 		default:
-		    printf("Tente novamente!\n");
+		    printf("%s", INVALID_OPTION);
 			break;
 
     return jogo;
@@ -108,7 +108,7 @@ FILE* carregue_continue_jogo (char quadro[9][9], char *nome_arquivo) {
 	// TODO
 	FILE *jogo = fopen(nome_arquivo, "rb");
 	if (jogo == NULL) {
-        fprintf("Tente novamente!\n");
+        printf("%s", ERROR_FILE_MSG);
         return NULL;
 
     else:
@@ -130,9 +130,13 @@ void carregue_novo_jogo(char quadro[9][9], char *nome_arquivo) {
 
 	for (i = 0; i < 9; i++) {
         for (j = 0; j < 9; j++) {
-            // . . .
+            fscanf(jogo, "%c", &quadro[i][j]);
         }
 	}
+
+	printf("Carregando novo jogo...\n");
+
+
     fclose(jogo);
 }
 
@@ -142,7 +146,24 @@ void carregue_novo_jogo(char quadro[9][9], char *nome_arquivo) {
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
 FILE* crie_arquivo_binario(char quadro[9][9]) {
-	// TODO
+    char nome_arquivo[20];
+    int jogada;
+    FILE* jogo;
+
+    jogo = fopen(nome_arquivo, "");
+
+    if (jogo == NULL) {
+        printf("%s", ERROR_FILE_MSG);
+        return NULL;
+    }
+
+    else {
+
+        // . . .
+
+    return jogo;
+
+    }
 }
 
 /* -----------------------------------------------------------------------------
