@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 /* Constantes */
 #define ERROR_FILE_MSG	"Nao foi possivel abrir o arquivo!\n"
@@ -61,7 +62,10 @@ FILE* carregue(char quadro[9][9]) {
 	int opcao;
 
 	menu_arquivo();
-	opcao = leia_opcao();
+	opcao = leia_opcao();//retorna um int
+
+	FILE *jogoCarregado;
+	char nome_arquivo[30];
 
 	// TODO Função incompleta
 
@@ -69,10 +73,18 @@ FILE* carregue(char quadro[9][9]) {
 
 		// carregar novo sudoku
 		case 1:
+			printf("Digite o nome do arquivo (sem seu formato):\n");
+			scanf("%s", nome_arquivo);
+			carregue_novo_jogo(quadro, nome_arquivo);
+			jogoCarregado = NULL;
+			return jogoCarregado;
 			break;
 
 		// continuar jogo
 		case 2:
+			printf("Digite o nome do arquivo do jogo que deseja ser continuado:\n");
+			scanf("%s", nome_arquivo);
+			jogoCarregado = carregue_continue_jogo(quadro, nome_arquivo);
 			break;
 
 		// retornar ao menu anterior
@@ -80,7 +92,10 @@ FILE* carregue(char quadro[9][9]) {
 			break;
 
 		default:
+			printf("%s", INVALID_OPTION);
+			return carregue(quadro);
 			break;
+	}
 }
 
 /* -----------------------------------------------------------------------------
@@ -89,7 +104,23 @@ FILE* carregue(char quadro[9][9]) {
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
 FILE* carregue_continue_jogo (char quadro[9][9], char *nome_arquivo) {
-	// TODO
+	/*um arquivo binario com as informações de um jogo deve ser aberto
+	 e continuado
+	*/
+
+	FILE *previousGame;
+
+	strcat(nome_arquivo, ".bin");
+	previousGame = fopen(nome_arquivo, "rb");
+	if (previousGame == NULL) {
+		printf("%s", ERROR_FILE_MSG);
+		return NULL;
+	}
+	fseek(previousGame, -(sizeof(char)*81), SEEK_END);
+	fread(quadro, sizeof(char), 81, previousGame);
+	fclose(previousGame);
+
+	return fopen(nome_arquivo , "rb+");
 }
 
 /* -----------------------------------------------------------------------------
@@ -98,7 +129,24 @@ FILE* carregue_continue_jogo (char quadro[9][9], char *nome_arquivo) {
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
 void carregue_novo_jogo(char quadro[9][9], char *nome_arquivo) {
-	// TODO
+	/*aqui deve ser escolhido um dos modelos de matriz em qrquivo txt
+	 disponibilizados onde 0 sçao posições vazias.
+	*/
+	FILE *newGame;
+	int i, j;
+
+	newGame = fopen(strcat(nome_arquivo, ".txt"), "r");
+	if (newGame == NULL) {
+		printf("%s", ERROR_FILE_MSG); //ver se o arquivo abriu corretamente
+		return;
+	}
+	for (int i = 0; i < 9; i++) {
+		for (int j = 0; j < 9; j++) {
+			fscanf(newGame, "%d", &quadro[i][j]);
+		}
+	}
+	fclose(newGame);
+
 }
 
 /* -----------------------------------------------------------------------------
@@ -107,7 +155,33 @@ void carregue_novo_jogo(char quadro[9][9], char *nome_arquivo) {
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
 FILE* crie_arquivo_binario(char quadro[9][9]) {
-	// TODO
+	/*ao inicio de um jogo, vamos criar um arquivo binario com nome aleatorio
+	para guardar o jogo, para iso usamos a funcao gen_random. O arquivo tem formato: 
+	um numero inteiro n e n+1 quadros
+	*/
+
+	FILE *arquivoBin;
+	char nome[10];
+	int jogada = 0;
+
+	gen_random(nome, 5);
+	strcat(nome,".bin");
+
+	arquivoBin = fopen(nome, "wb");
+	if(arquivoBin == NULL){
+		printf("%s", ERROR_FILE_MSG);
+		return NULL;
+	}
+
+	printf("\nJogada: %d.\n", jogada);
+
+	/*coloca a matrix 9x9 no arquivo binario*/
+	rewind(arquivoBin); // ter certeza que está no começo do arquivo.
+	fwrite(&jogada, sizeof(int), 1, arquivoBin);
+	fwrite(quadro, sizeof(quadro[0][0]), 81, arquivoBin);  // 81 é quantos elemento tem
+	fclose(arquivoBin);
+
+	return fopen(nome , "rb");
 }
 
 /* -----------------------------------------------------------------------------
@@ -160,7 +234,16 @@ int eh_valido(const char quadro[9][9], int x, int y, int valor) {
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
 int eh_valido_na_coluna(const char quadro[9][9], int y, int valor) {
-	// TODO
+	/*precisamos checar os 9 elementos de uma coluna y e comparar com o int valor
+	retorna FALSO ou VERDADEIRO.(tipos boolean definidos, FALSO = 0, VERDADEIRO = 1)
+	*/
+
+	for (int i = 0; i < 9; i++) {
+        if (quadro[i][y] == valor) {
+            return FALSO;
+        }
+    }
+    return VERDADEIRO;
 }
 
 /* -----------------------------------------------------------------------------
@@ -169,7 +252,17 @@ int eh_valido_na_coluna(const char quadro[9][9], int y, int valor) {
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
 int eh_valido_na_linha(const char quadro[9][9], int x, int valor) {
-	// TODO
+	/*precisamos checar os 9 elementos de uma linha x, comparando ao int valor
+	retorna FALSO ou VERDADEIRO.(tipos boolean definidos, FALSO = 0, VERDADEIRO = 1)
+	*/
+	int i;
+
+	for (int i = 0; i < 9; i++) {
+        if (quadro[x][i] == valor) {
+            return FALSO;
+        }
+    }
+    return VERDADEIRO;
 }
 
 /* -----------------------------------------------------------------------------
@@ -178,7 +271,27 @@ int eh_valido_na_linha(const char quadro[9][9], int x, int valor) {
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
 int eh_valido_no_quadrante3x3(const char quadro[9][9], int x, int y, int valor) {
-	// TODO
+	/*precisamos checar todos os elementos do quadrante em q a posição
+	(x,y) está. e comparar os int valor. Para achar o quadrante podemos usar a funcao 
+	determine_quadrante para cada resultado. Assim tendo um começo e final diferente das [i][f]
+	checadas, que podem se obter pelas funções ini_y, ini_x, fim_y e fim_x. 
+	retornam FALSO ou VERDADEIRO.(tipos boolean definidos, FALSO = 0, VERDADEIRO = 1)
+	*/
+    int quadrante = determine_quadrante(x,y);
+    int x_ini = ini_x(quadrante);
+    int y_ini = ini_y(quadrante);
+    int x_fim = fim_x(quadrante);
+    int y_fim = fim_y(quadrante);
+
+    for (int i = x_ini; i < x_fim; i++) {
+        for (int j = y_ini; j < y_fim; j++) {
+            if (quadro[i][j] == valor) {
+                return FALSO;
+            }
+        }
+    }
+
+	return VERDADEIRO;
 }
 
 /* -----------------------------------------------------------------------------
@@ -207,7 +320,7 @@ int existe_posicao_vazia(const char quadro[9][9]) {
 void imprima(const char quadro[9][9]) {
 	int i, j;
 
-//	puts("~~~~~~~~ SUDOKU ~~~~~~~~");
+	puts("~~~~~~~~ SUDOKU ~~~~~~~~");
 	puts("    0 1 2   3 4 5   6 7 8");
 	for (i = 0; i < 9; i++) {
 		if (i % 3 == 0)
@@ -273,24 +386,39 @@ void jogue() {
 		case 2: {
 			int x, y, valor;
 
-			printf("Entre com a posicao e o valor (linha, coluna, valor): ");
-			scanf("%d %d %d", &x, &y, &valor);
-
-
-			if (eh_valido(quadro, x, y, valor)) {
-				quadro[x][y] = valor;
-				salve_jogada_bin(fb, quadro);
+			if(fb == NULL){//verifica há um arquivo disponivel(aerto)
+				printf("Nenhum arquivo disponivel para jogo!");
+				break;
 			}
-			else
-				puts("Valor ou posicao incorreta! Tente novamente!");
-		}
+
+			if(existe_posicao_vazia(quadro)){
+				printf("Entre com a posicao e o valor (linha, coluna, valor): ");
+				scanf("%d %d %d", &x, &y, &valor);
+
+
+				if (eh_valido(quadro, x, y, valor)) {
+					quadro[x][y] = valor;
+					salve_jogada_bin(fb, quadro);
+				} else{
+					puts("Valor ou posicao incorreta! Tente novamente!");
+				}
+
+			} else{
+				printf("Sem posições vazias!!");
+			}
+
 			break;
 
 		// resolva 1 passo
 		case 3:
-			resolve_um_passo(quadro);
-			salve_jogada_bin(fb, quadro);
-			puts("Um passo resolvido!");
+			if (existe_posicao_vazia(quadro)){
+				resolve_um_passo(quadro);
+				salve_jogada_bin(fb, quadro);
+				puts("Um passo resolvido!");
+			}else{
+				printf("Sem possibilidade de realiza um passo!");
+			}
+			
 			break;
 
 		// resolva o sudoku completo
@@ -299,7 +427,13 @@ void jogue() {
 			break;
 
 		case 9:
-			puts("Programa finalizado ..");
+		if (fb!= NULL){
+			printf("fechando arquivo");
+			fclose(fb);
+		} else{
+			printf("não há arquivopara ser fechado!");
+		}
+			puts("Programa finalizado!");
 			break;
 
 		default:
@@ -314,11 +448,12 @@ void jogue() {
  * Resolve o sudoku
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
-void resolve_completo(FILE *fb, char quadro[9][9]) {
+void resolve_completo(FILE *fb, char quadro[9][9]){
 	while(existe_posicao_vazia(quadro)) {
 		resolve_um_passo(quadro);
 		salve_jogada_bin(fb, quadro);
 	}
+	printf("Jogo resolvido!");
 }
 
 /* -----------------------------------------------------------------------------
@@ -327,7 +462,22 @@ void resolve_completo(FILE *fb, char quadro[9][9]) {
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
 void resolve_um_passo(char quadro[9][9]) {
-	// TODO
+	int cont, resp;
+	int i, j, tenta;
+	cont = 0;
+
+	for(int i = 0; i<9;++){
+		for(int j = 0; j<9; j++){
+			if(quadro[i][j] == 0){
+				resp = tenta;
+				cont = 0;
+			}
+		}//se houver só uma resposta
+		if (cont == 1){
+			quadro[i][j] = resp;
+			return;//para "parar" o programa
+		}
+	}
 }
 
 /* -----------------------------------------------------------------------------
@@ -336,7 +486,18 @@ void resolve_um_passo(char quadro[9][9]) {
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
 void salve_jogada_bin (FILE *fb, char quadro[9][9]) {
-	// TODO
+	int num_jogada;
+
+	if (fb != NULL){
+		fseek(fb, 0, SEEK_SET); //acha o começo do arquivo e atualiza a quantidade de jogadas
+		fread(&num_jogada, sizeof(int), 1, fb);
+		num_jogada++;
+		fseek(fb, 0, SEEK_SET);
+		fwrite(&num_jogada, sizeof(int), 1, fb); // atualiza a variavel num_jogada
+		fseek(fb, -1 , SEEK_END);
+		fwrite(quadro, sizeof(quadro[0][0]), 81, fb); //escreve um quadro novo
+
+	}
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
