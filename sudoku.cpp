@@ -78,23 +78,23 @@ FILE* carregue(char quadro[9][9]) {
 			carregue_novo_jogo(quadro, nome_arquivo);
 			jogoCarregado = NULL;
 			return jogoCarregado;
-			break;
+		break;
 
 		// continuar jogo
 		case 2:
 			printf("Digite o nome do arquivo do jogo que deseja ser continuado:\n");
 			scanf("%s", nome_arquivo);
 			jogoCarregado = carregue_continue_jogo(quadro, nome_arquivo);
-			break;
+		break;
 
 		// retornar ao menu anterior
 		case 9:
-			break;
+		break;
 
 		default:
 			printf("%s", INVALID_OPTION);
 			return carregue(quadro);
-			break;
+		break;
 	}
 }
 
@@ -408,6 +408,7 @@ void jogue() {
 			}
 
 			break;
+			}
 
 		// resolva 1 passo
 		case 3:
@@ -431,24 +432,25 @@ void jogue() {
 			printf("fechando arquivo");
 			fclose(fb);
 		} else{
-			printf("não há arquivopara ser fechado!");
+			printf("não há arquivo para ser fechado!");
 		}
-			puts("Programa finalizado!");
+			puts("\nPrograma finalizado!");
 			break;
 
 		default:
 			puts(INVALID_OPTION);
 			break;
-		}
+		}	
 	}
 }
+
 
 /* -----------------------------------------------------------------------------
  * RESOLVER
  * Resolve o sudoku
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
-void resolve_completo(FILE *fb, char quadro[9][9]){
+void resolve_completo(FILE *fb, char quadro[9][9]) {
 	while(existe_posicao_vazia(quadro)) {
 		resolve_um_passo(quadro);
 		salve_jogada_bin(fb, quadro);
@@ -464,18 +466,23 @@ void resolve_completo(FILE *fb, char quadro[9][9]){
 void resolve_um_passo(char quadro[9][9]) {
 	int cont, resp;
 	int i, j, tenta;
-	cont = 0;
+	cont = 0;//contador de respostas validas
 
-	for(int i = 0; i<9;++){
+	for(int i = 0; i<9;i++){
 		for(int j = 0; j<9; j++){
 			if(quadro[i][j] == 0){
-				resp = tenta;
-				cont = 0;
+				for (int tentativa = 1; tentativa <= 9; tentativa++) {
+					if (eh_valido(quadro, i, j, tentativa)) {
+						resp = tenta;
+						cont ++;
+					}
+				}
+				//se houver só uma resposta
+				if (cont == 1){
+					quadro[i][j] = resp;
+					return;//para "parar" o programa
+				}
 			}
-		}//se houver só uma resposta
-		if (cont == 1){
-			quadro[i][j] = resp;
-			return;//para "parar" o programa
 		}
 	}
 }
@@ -649,7 +656,7 @@ void menu() {
  * Imprime o menu de opcoes do arquivo
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
-void menu_arquivo() {
+void menu_arquivo() {	
 	puts("\n~~~~~ MENU ARQUIVO ~~~~~");
 	puts("[1] - Novo jogo");
 	puts("[2] - Continuar jogo");
