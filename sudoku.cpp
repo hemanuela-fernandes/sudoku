@@ -161,10 +161,10 @@ FILE* crie_arquivo_binario(char quadro[9][9]) {
 	*/
 
 	FILE *arquivoBin;
-	char nome[10];
+	char nome[12];
 	int jogada = 0;
 
-	gen_random(nome, 5);
+	gen_random(nome, 7);
 	strcat(nome,".bin");
 
 	arquivoBin = fopen(nome, "wb");
@@ -456,6 +456,7 @@ void resolve_completo(FILE *fb, char quadro[9][9]) {
 		salve_jogada_bin(fb, quadro);
 	}
 	printf("Jogo resolvido!");
+	return;
 }
 
 /* -----------------------------------------------------------------------------
@@ -471,8 +472,8 @@ void resolve_um_passo(char quadro[9][9]) {
 	for(int i = 0; i<9;i++){
 		for(int j = 0; j<9; j++){
 			if(quadro[i][j] == 0){
-				for (int tentativa = 1; tentativa <= 9; tentativa++) {
-					if (eh_valido(quadro, i, j, tentativa)) {
+				for (int tenta = 1; tenta <= 9; tenta++) {
+					if (eh_valido(quadro, i, j, tenta)) {
 						resp = tenta;
 						cont ++;
 					}
